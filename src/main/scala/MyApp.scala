@@ -179,7 +179,7 @@ object MyApp extends App {
   /** Entry point for linear solution
     *
     * @param twelve0 start value
-    * @return
+    * @return list of valid Twelves
     */
   def solve(twelve0: Twelve): List[Twelve] = {
 
@@ -229,6 +229,12 @@ object MyApp extends App {
 
   }
 
+
+  /** Entry point for concurrent solution
+    *
+    * @param twelve0 start value
+    * @return list of valid Twelves
+    */
   def solveFuture(twelve0: Twelve): Future[List[Twelve]] = {
 
     // all possible rows
@@ -252,6 +258,7 @@ object MyApp extends App {
         twlv.toMap
       }
 
+      // the salt of fast method is to make this collection parallel
       val validTwelves = twelves.filter(validation.f).par
       val solutionsCurrent = twelves.filter(isValid)
       val solutionsNext = if (solutionsCurrent.nonEmpty) {
@@ -283,7 +290,7 @@ object MyApp extends App {
 
   //val input = twelveToString(randomCubes()(new Random()))
 
-  println(s"started at ${new Date()}")
+  val startTime = new Date().getTime
 
   twelveFromString(input) match {
     case Some(twelve) =>
@@ -299,6 +306,6 @@ object MyApp extends App {
     case _ =>
   }
 
-  println(s"finished at ${new Date()}")
+  println(s"finished in ${(new Date().getTime - startTime) / 1000} s")
 
 }
