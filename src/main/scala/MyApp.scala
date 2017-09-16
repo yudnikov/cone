@@ -111,6 +111,11 @@ object MyApp extends App {
     */
   def cartesianDistinct[T](list: List[List[T]]): List[List[T]] = {
 
+    /** Simple cartesian sum
+      *
+      * @param list list of list's to add
+      * @return list of merged list's
+      */
     def cartesian(list: List[List[T]]): List[List[T]] = list match {
       case Nil =>
         List(Nil)
@@ -122,8 +127,21 @@ object MyApp extends App {
   }
 
 
+  /** Defines Twelve's cells (rows) movement
+    *
+    * @param from source tuple
+    * @param to destination tuple
+    */
   case class Movement(from: (Short, Vector[Short]), to: (Short, Vector[Short]))
 
+
+  /** Returns list of movements by given Twelve, list of sources, and list of destinations
+    *
+    * @param twelve Twelve to shuffle
+    * @param rowsFrom list of source rows
+    * @param rowsTo list of destination rows
+    * @return list of movements
+    */
   def getMovements(twelve: Twelve, rowsFrom: List[Short], rowsTo: List[Short]): List[Movement] = {
     var i = 0
     rowsFrom.map { row =>
@@ -140,8 +158,10 @@ object MyApp extends App {
     }.filter(_.nonEmpty).map(_.get)
   }
 
-  // concurrent cache
+
+  // thread safe cache
   val cache: ConcurrentHashMap[List[List[Short]], List[List[Short]]] = new ConcurrentHashMap()
+
 
   def getVariants(rows: List[Short], rowsToShuffle: List[Short]): List[List[Short]] = {
     val key = List.fill(rows.length)(rowsToShuffle)
@@ -259,9 +279,9 @@ object MyApp extends App {
     res.toMap
   }
 
-  //val input = "1 0 7 5\n3 4 1 3\n5 1 1 4\n7 6 1 8\n5 7 4 4\n8 3 3 4\n7 1 5 4\n4 1 1 0\n3 1 1 4\n2 4 3 8\n5 1 1 7\n4 2 4 2"
+  val input = "1 0 7 5\n3 4 1 3\n5 1 1 4\n7 6 1 8\n5 7 4 4\n8 3 3 4\n7 1 5 4\n4 1 1 0\n3 1 1 4\n2 4 3 8\n5 1 1 7\n4 2 4 2"
 
-  val input = twelveToString(randomCubes()(new Random()))
+  //val input = twelveToString(randomCubes()(new Random()))
 
   println(s"started at ${new Date()}")
 
