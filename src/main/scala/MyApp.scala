@@ -210,7 +210,7 @@ object MyApp extends App {
       val validTwelves = twelves.filter(validation.f)
       val solutionsCurrent = twelves.filter(isValid)
       val solutionsNext = if (solutionsCurrent.nonEmpty) {
-        solutionsCurrent.union(solutions)
+        solutionsCurrent.union(solutions).distinct
       } else {
         solutions
       }
@@ -262,7 +262,7 @@ object MyApp extends App {
       val validTwelves = twelves.filter(validation.f).par
       val solutionsCurrent = twelves.filter(isValid)
       val solutionsNext = if (solutionsCurrent.nonEmpty) {
-        solutionsCurrent.union(solutions)
+        solutionsCurrent.union(solutions).distinct
       } else {
         solutions
       }
@@ -286,7 +286,7 @@ object MyApp extends App {
     res.toMap
   }
 
-  val input = "1 0 7 5\n3 4 1 3\n5 1 1 4\n7 6 1 8\n5 7 4 4\n8 3 3 4\n7 1 5 4\n4 1 1 0\n3 1 1 4\n2 4 3 8\n5 1 1 7\n4 2 4 2"
+  val input = "5 7 4 4\n3 4 1 3\n7 1 5 4\n5 1 1 4\n4 2 4 2\n2 4 3 8\n5 1 1 4\n4 1 1 0\n1 0 7 5\n5 1 1 7\n4 2 4 2\n1 0 7 5"
 
   //val input = twelveToString(randomCubes()(new Random()))
 
