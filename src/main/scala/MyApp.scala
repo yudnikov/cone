@@ -311,6 +311,7 @@ object MyApp extends App {
     }
 
   inputs.foreach { input =>
+    println("*" * 64)
     println(s"input = \n$input \nsolving...")
     val startTime = new Date().getTime
     solveInput(input)
