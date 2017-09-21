@@ -58,7 +58,7 @@ object MyApp extends App {
     * @param twelve some Twelve to validate
     * @return is valid or not
     */
-  def isValid(twelve: Twelve): Boolean = validations.forall(_.f(twelve))
+  def isSolution(twelve: Twelve): Boolean = validations.forall(_.f(twelve))
 
 
   /** Let's define reverse index for validations, where the key is row number, and a value list of functions
@@ -158,6 +158,20 @@ object MyApp extends App {
     }.filter(_.nonEmpty).map(_.get)
   }
 
+  def getMovements2(twelve: Twelve, rowsFrom: List[Short], rowsTo: List[Short]): List[Movement] = {
+    val d1 = rowsFrom.diff(rowsTo)
+    val d2 = rowsTo.diff(rowsFrom)
+    if (d1.length == d2.length) {
+      val r1 = d2.zip(d1).map(t => Movement(t._1 -> twelve(t._2), t._2 -> twelve(t._1)))
+      val r2 = d2.zip(d1.reverse).map(t => Movement(t._1 -> twelve(t._2), t._2 -> twelve(t._1)))
+      val res = r1.union(r2).distinct
+      res
+    } else {
+      Nil
+    }
+  }
+
+  def getMovements3(twelve: Twelve, rowsFrom: List[Short], rowsTo: List[Short]): List[Movement] = ???
 
   // thread safe cache
   val cache: ConcurrentHashMap[List[List[Short]], List[List[Short]]] = new ConcurrentHashMap()
@@ -208,7 +222,7 @@ object MyApp extends App {
       }
 
       val validTwelves = twelves.filter(validation.f)
-      val solutionsCurrent = twelves.filter(isValid)
+      val solutionsCurrent = twelves.filter(isSolution)
       val solutionsNext = if (solutionsCurrent.nonEmpty) {
         solutionsCurrent.union(solutions).distinct
       } else {
@@ -237,6 +251,10 @@ object MyApp extends App {
     */
   def solveFuture(twelve0: Twelve): Future[List[Twelve]] = {
 
+    val cubes0: List[Cube] = twelve0.values.toList
+
+    def validate(twelve: Twelve): Boolean = twelve.values.toList.diff(cubes0) == Nil
+
     // all possible rows
     val rows = twelve0.keys.toList.sorted
 
@@ -250,18 +268,40 @@ object MyApp extends App {
       val rowsToShuffle = rows.diff(rowsFixed)
       val variants = getVariants(validation.rows, rowsToShuffle)
       val twelves = variants.map { rowsTo =>
+        val movements = getMovements2(twelve, validation.rows, rowsTo)
+        val twlv = mutable.Map(twelve.toSeq: _*)
+        movements.foreach { movement =>
+          twlv += movement.from += movement.to
+        }
+        val res = twlv.toMap
+        res
+      }.distinct
+
+      val twelves2 = variants.map { rowsTo =>
         val movements = getMovements(twelve, validation.rows, rowsTo)
         val twlv = mutable.Map(twelve.toSeq: _*)
         movements.foreach { movement =>
           twlv += movement.from += movement.to
         }
-        twlv.toMap
-      }
+        val res = twlv.toMap
+        res
+      }.distinct.filter(validate)
+
+      val v1 = twelves.filter(validate)
+      val v2 = twelves2.filter(validate)
+      val d1 = v1.distinct
+      val d2 = v2.distinct
+
+      val diff = d2.diff(d1)
 
       // the salt of fast method is to make this collection parallel
-      val validTwelves = twelves.filter(validation.f).par
-      val solutionsCurrent = twelves.filter(isValid)
+      val validTwelves = twelves2.filter(validation.f).par
+      val solutionsCurrent = twelves2.filter(isSolution)
       val solutionsNext = if (solutionsCurrent.nonEmpty) {
+        solutionsCurrent.foreach { t =>
+          if (!validate(t))
+            println(s"invalid \n$t")
+        }
         solutionsCurrent.union(solutions).distinct
       } else {
         solutions
@@ -287,11 +327,14 @@ object MyApp extends App {
   }
 
   val inputs = List(
+    "9 1 6 4\n2 0 4 7\n5 2 5 7\n2 1 1 2\n1 2 2 6\n1 1 1 0\n5 1 9 2\n1 3 4 0\n3 2 5 3\n1 0 4 7\n4 3 1 1\n2 3 0 3",
+    "5 1 9 2\n1 3 4 0\n3 2 5 3\n1 0 4 7\n4 3 1 1\n2 3 0 3\n9 1 6 4\n2 0 4 7\n5 2 5 7\n2 1 1 2\n1 2 2 6\n1 1 1 0",
+    "4 3 1 1\n2 3 0 3\n9 1 6 4\n2 0 4 7\n5 2 5 7\n5 1 9 2\n1 3 4 0\n3 2 5 3\n1 0 4 7\n2 1 1 2\n1 2 2 6\n1 1 1 0"/*,
     "1 0 7 5\n3 4 1 3\n5 1 1 4\n7 6 1 8\n5 7 4 4\n8 3 3 4\n7 1 5 4\n4 1 1 0\n3 1 1 4\n2 4 3 8\n5 1 1 7\n4 2 4 2",
     "5 7 4 4\n3 4 1 3\n7 1 5 4\n5 1 1 4\n4 2 4 2\n2 4 3 8\n5 1 1 4\n4 1 1 0\n1 0 7 5\n5 1 1 7\n4 2 4 2\n1 0 7 5",
     "8 0 5 1\n4 4 3 6\n3 7 1 2\n5 0 5 2\n3 0 4 3\n5 1 0 7\n4 0 3 3\n5 4 6 0\n3 4 3 0\n1 7 3 8\n0 7 7 3\n3 2 0 4",
     "1 6 4 0\n6 1 3 5\n4 0 5 2\n4 1 3 5\n5 1 4 2\n6 5 5 4\n4 0 4 6\n5 2 1 4\n4 6 0 1\n2 0 1 4\n3 0 4 5\n4 0 5 1",
-    "3 3 3 4\n4 1 3 5\n4 5 3 4\n5 2 1 3\n3 3 7 4\n2 1 3 3\n3 2 6 1\n4 3 3 4\n5 2 2 2\n4 2 2 3\n5 5 1 4\n1 2 5 3"
+    "3 3 3 4\n4 1 3 5\n4 5 3 4\n5 2 1 3\n3 3 7 4\n2 1 3 3\n3 2 6 1\n4 3 3 4\n5 2 2 2\n4 2 2 3\n5 5 1 4\n1 2 5 3"*/
   )
 
   def solveInput(input: String): Unit =
